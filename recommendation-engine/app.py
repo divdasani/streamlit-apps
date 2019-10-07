@@ -50,58 +50,47 @@ def build_model(factors, regularization, iterations, alpha):
 
     return model, sparse_user_item
 
-
-def name(product_ids):
-    product_dic,_,_ = get_data()
-    product_names = []
-    for product_id in product_ids:
-        product_names.append(product_dic.product_name.loc[product_dic.product_id == product_id].iloc[0])
-    return pd.DataFrame({'product': product_names})
-
 def output_recs(recommended, named):
-    recs = []
-    for item in recommended:
-        recs.append(item[0])
+    recs = [item[0] for item in recommended]
     if named:
-        return name(recs)
+        product_dic,_,_ = get_data()
+        product_names = []
+        for product_id in product_ids:
+            product_names.append(product_dic.product_name.loc[product_dic.product_id == product_id].iloc[0])
+        return pd.DataFrame({'product': product_names})
     else:
         return recs
 
 def similar_products(product_id, N, named=False):
     inst = copy.deepcopy(model)
     similar = inst.similar_items(product_id, N + 1)
-
     return output_recs(similar[1:],named)
 
 def recommendations(user_id, N, named=False):
-    recommended = model.recommend(user_id, sparse_user_item, N=N)
-
+    inst = copy.deepcopy(model)
+    recommended = inst.recommend(user_id, sparse_user_item, N=N)
     return output_recs(recommended,named)
-
 
 st.title('Recommendation Engine')
 st.subheader('Made by Div Dasani')
-st.write('\n\n')
-st.write('\n\n')
+st.write('\n')
+st.write('\n')
+st.sidebar.header('Search')
+
 product_dic, _, df_merged = get_data()
 model, sparse_user_item = build_model(factors, regularization, iterations, alpha)
-st.sidebar.header('Search')
 
 user_id = st.sidebar.text_input('User ID', '202279')
 if st.sidebar.button('User Recommendations'):
     try:
-        int(user_id)
-        if int(user_id) > 206209 or int(user_id) < 1:
+        user_id = int(user_id)
+        if user_id > 206209 or user_id < 1:
             st.error('Please input an integer between 1 and 206209')
         else:
-            user_id = int(user_id)
-            users = list(df_merged.user_id.unique())
-            options = [str(x) for x in users]
-
             st.write('User Purchase History')
             st.write(name(df_merged[df_merged['user_id'] == user_id].product_id.tolist()))
             st.write('\nRecommended Products')
-            st.write(recommendations(int(user_id), 5, named=True))
+            st.write(recommendations(user_id, 5, named=True))
     except ValueError:
         st.error('Please input an integer between 1 and 206209')
 
